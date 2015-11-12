@@ -14,6 +14,8 @@ import time
 import socket
 import sys
 import argparse
+import requests
+import base64
 
 from datetime import datetime
 
@@ -32,37 +34,40 @@ def nmap(url, retry = False, *args):
 
     num_threads +=1
     found = False
-    cmd = 'nmap --open -p 1099,5005,8880,7001,16200 '+url
+    cmd = 'nmap --open -p 1099,5005,8080,8880,7001,7002,16200 '+url
     print "Scanning: "+url
-    try:
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        out, err = p.communicate()
-        if "5005" in out:
-            if(verify(url, "5005")):
-                found = True
-        if "8880" in out:
-            if(verify(url, "8880")):
-                found = True
-        if "1099" in out:
-            print " - (Possibly) Vulnerable "+url+" (1099)"
+    #try:
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    out, err = p.communicate()
+    if "5005" in out:
+        if(verify(url, "5005")):
             found = True
-        if "7001" in out:
-            if(weblogic(url, 7001)):
-                found = True
-        if "16200" in out:
-            if(weblogic(url, 16200)):
-                found = True
-        if(found):
-            shellCounter +=1
-        num_threads -=1
-    except:
-        num_threads -=1
-        threads -= 1
-        time.sleep(5)
-        if(retry):
-            print " ! Unable to scan this host "+url
-        else:
-            nmap(url, True)
+    if "8880" in out:
+        if(verify(url, "8880")):
+            found = True
+    if "1099" in out:
+        print " - (Possibly) Vulnerable "+url+" (1099)"
+        found = True
+    if "7001" in out:
+        if(weblogic(url, 7001)):
+            found = True
+    if "16200" in out:
+        if(weblogic(url, 16200)):
+            found = True
+    if "8080" in out:
+        if(jenkins(url, 8080)):
+            found = True
+    if(found):
+        shellCounter +=1
+    num_threads -=1
+#     except Exception:
+#         num_threads -=1
+#         threads -= 1
+#         time.sleep(5)
+#         if(retry):
+#             print " ! Unable to scan this host "+url
+#         else:
+#             nmap(url, True)
 
 def verify(url, port, retry = False):
     try:
@@ -104,6 +109,33 @@ def weblogic(url, port):
         return True
     return False
 
+#Used this part from https://github.com/foxglovesec/JavaUnserializeExploits
+def jenkins(url, port, suffix = ""):
+    #Query Jenkins over HTTP to find what port the CLI listener is on
+    r = requests.get('http://'+url+':'+str(port)+suffix)
+    if 'X-Jenkins-CLI-Port' in r.headers:
+        cli_port = int(r.headers['X-Jenkins-CLI-Port'])
+    elif suffix == "":
+        return jenkins(url, port, "/jenkins/")
+    else:
+        return False    
+    
+    #Open a socket to the CLI port
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_address = (url, cli_port)
+    sock.connect(server_address)
+    
+    # Send headers
+    headers='\x00\x14\x50\x72\x6f\x74\x6f\x63\x6f\x6c\x3a\x43\x4c\x49\x2d\x63\x6f\x6e\x6e\x65\x63\x74'
+    sock.send(headers)
+    
+    data1 = sock.recv(1024)
+    data2 = sock.recv(1024)
+    if "rO0AB" in data2:
+        print " - Vulnerable Jenkins: "+url+":"+str(port)+suffix
+        return True
+    return False
+
 def dispatch(url):
     try:
         threading.Thread(target=nmap, args=(url, False, 1)).start()
@@ -123,7 +155,7 @@ def worker():
             url = str(url.replace("\n", '')) 
             url = str(url.replace("/", ''))
             dispatch(url)
-        while(num_threads > 1):
+        while(num_threads > 0):
             time.sleep(1)
         if(shellCounter > 0):
             shellCounterText = "\033[1;31m"+str(shellCounter)+"\033[1;m"
