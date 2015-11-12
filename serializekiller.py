@@ -36,38 +36,38 @@ def nmap(url, retry = False, *args):
     found = False
     cmd = 'nmap --open -p 1099,5005,8080,8880,7001,7002,16200 '+url
     print "Scanning: "+url
-    #try:
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    out, err = p.communicate()
-    if "5005" in out:
-        if(verify(url, "5005")):
+    try:
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        out, err = p.communicate()
+        if "5005" in out:
+            if(verify(url, "5005")):
+                found = True
+        if "8880" in out:
+            if(verify(url, "8880")):
+                found = True
+        if "1099" in out:
+            print " - (Possibly) Vulnerable "+url+" (1099)"
             found = True
-    if "8880" in out:
-        if(verify(url, "8880")):
-            found = True
-    if "1099" in out:
-        print " - (Possibly) Vulnerable "+url+" (1099)"
-        found = True
-    if "7001" in out:
-        if(weblogic(url, 7001)):
-            found = True
-    if "16200" in out:
-        if(weblogic(url, 16200)):
-            found = True
-    if "8080" in out:
-        if(jenkins(url, 8080)):
-            found = True
-    if(found):
-        shellCounter +=1
-    num_threads -=1
-#     except Exception:
-#         num_threads -=1
-#         threads -= 1
-#         time.sleep(5)
-#         if(retry):
-#             print " ! Unable to scan this host "+url
-#         else:
-#             nmap(url, True)
+        if "7001" in out:
+            if(weblogic(url, 7001)):
+                found = True
+        if "16200" in out:
+            if(weblogic(url, 16200)):
+                found = True
+        if "8080" in out:
+            if(jenkins(url, 8080)):
+                found = True
+        if(found):
+            shellCounter +=1
+        num_threads -=1
+    except Exception:
+        num_threads -=1
+        threads -= 1
+        time.sleep(5)
+        if(retry):
+            print " ! Unable to scan this host "+url
+        else:
+            nmap(url, True)
 
 def verify(url, port, retry = False):
     try:
