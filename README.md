@@ -8,9 +8,9 @@ You can read more about the bug here: http://foxglovesecurity.com/2015/11/06/wha
 
 ##How do I use it?
 You need to install Python 2, Curl and NMAP first. Also Python needs the requests library. With that installed it's pretty ease, just:
-./serializekiller.py targetfile.txt
+`./serializekiller.py targetfile.txt`
 
-**Note:** on my Mac I had to call the script with: python2.7 serializekiller.py targetfile.txt. It *might* be specific for my installation. On Linux we experienced no problems.
+**Note:** on my Mac I had to call the script with: `python2.7 serializekiller.py targetfile.txt`. It *might* be specific for my installation. On Linux we experienced no problems.
 
 ##Is it dangerous to use?
 
