@@ -26,7 +26,6 @@ parser = argparse.ArgumentParser(prog='serializekiller.py', formatter_class=argp
 parser.add_argument('file', help='File with targets')
 args = parser.parse_args()
 
-
 def nmap(url, retry = False, *args):
     global num_threads
     global shellCounter
@@ -34,20 +33,17 @@ def nmap(url, retry = False, *args):
 
     num_threads +=1
     found = False
-    cmd = 'nmap --open -p 1099,5005,8080,8880,7001,7002,16200 '+url
+    cmd = 'nmap --open -p 5005,8080,9080,8880,7001,7002,16200 '+url
     print "Scanning: "+url
     try:
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         out, err = p.communicate()
         if "5005" in out:
-            if(verify(url, "5005")):
+            if(websphere(url, "5005")):
                 found = True
         if "8880" in out:
-            if(verify(url, "8880")):
+            if(websphere(url, "8880")):
                 found = True
-        if "1099" in out:
-            print " - (Possibly) Vulnerable "+url+" (1099)"
-            found = True
         if "7001" in out:
             if(weblogic(url, 7001)):
                 found = True
@@ -56,6 +52,9 @@ def nmap(url, retry = False, *args):
                 found = True
         if "8080" in out:
             if(jenkins(url, 8080)):
+                found = True
+        if "9080" in out:
+            if(jenkins(url, 9080)):
                 found = True
         if(found):
             shellCounter +=1
@@ -69,7 +68,7 @@ def nmap(url, retry = False, *args):
         else:
             nmap(url, True)
 
-def verify(url, port, retry = False):
+def websphere(url, port, retry = False):
     try:
         cmd = 'curl -m 10 --insecure https://'+url+":"+port
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -88,37 +87,44 @@ def verify(url, port, retry = False):
     except:
         time.sleep(3)
         if(retry):
-            print " ! Unable to verify vulnerablity for host "+url+":"+str(port)
+            print " ! Unable to verify Websphere vulnerablity for host "+url+":"+str(port)
             return False
-        return verify(url, port, True)
+        return websphere(url, port, True)
 
 #Used this part from https://github.com/foxglovesec/JavaUnserializeExploits
 def weblogic(url, port):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    server_address = (url, port)
-    sock.connect(server_address)
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     
-    # Send headers
-    headers='t3 12.2.1\nAS:255\nHL:19\nMS:10000000\nPU:t3://us-l-breens:7001\n\n'
-    sock.sendall(headers)
-    data = sock.recv(1024)
-    sock.close()
-    if "HELO" in data:
-        print " - Vulnerable Weblogic: "+url+" ("+str(port)+")"
-        return True
-    return False
+        server_address = (url, port)
+        sock.connect(server_address)
+        
+        # Send headers
+        headers='t3 12.2.1\nAS:255\nHL:19\nMS:10000000\nPU:t3://us-l-breens:7001\n\n'
+        sock.sendall(headers)
+        data = sock.recv(1024)
+        sock.close()
+        if "HELO" in data:
+            print " - Vulnerable Weblogic: "+url+" ("+str(port)+")"
+            return True
+        return False
+    except:
+        print " ! Unable to verify Weblogic vulnerability for host "+url+":"+str(port)
 
 #Used this part from https://github.com/foxglovesec/JavaUnserializeExploits
 def jenkins(url, port, suffix = ""):
-    #Query Jenkins over HTTP to find what port the CLI listener is on
-    r = requests.get('http://'+url+':'+str(port)+suffix)
-    if 'X-Jenkins-CLI-Port' in r.headers:
-        cli_port = int(r.headers['X-Jenkins-CLI-Port'])
-    elif suffix == "":
-        return jenkins(url, port, "/jenkins/")
-    else:
-        return False    
+    try:
+        #Query Jenkins over HTTP to find what port the CLI listener is on
+        r = requests.get('http://'+url+':'+str(port)+suffix)
+        if 'X-Jenkins-CLI-Port' in r.headers:
+            cli_port = int(r.headers['X-Jenkins-CLI-Port'])
+        elif suffix == "":
+            return jenkins(url, port, "/jenkins/")
+        else:
+            return False
+    except:
+        #could not connect to the server
+        return False
     
     #Open a socket to the CLI port
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -155,22 +161,18 @@ def worker():
             url = str(url.replace("\n", '')) 
             url = str(url.replace("/", ''))
             dispatch(url)
-        while(num_threads > 0):
+        while(num_threads > 1):
             time.sleep(1)
-        if(shellCounter > 0):
-            shellCounterText = "\033[1;31m"+str(shellCounter)+"\033[1;m"
-        else:
-            shellCounterText = str(shellCounter)
 
-        print "\r\n => scan done. "+shellCounterText+" vulnerable hosts found."
+        print "\r\n => scan done. "+str(shellCounter)+" vulnerable hosts found."
         print "Execution time: "+str(datetime.now() - startTime)
         exit()
 
 if __name__ == '__main__':
     startTime = datetime.now()  
-    print "\033[1;31mStart SerializeKiller...\033[1;m"
+    print "Start SerializeKiller..."
     print "This could take a while. Be patient.\r\n"
     num_threads = 0
-    threads = 30
+    threads = 35
     shellCounter = 0
     t = threading.Thread(target=worker).start()
