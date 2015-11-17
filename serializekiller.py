@@ -34,7 +34,7 @@ def nmap(url, retry=False, *args):
 
     num_threads += 1
     found = False
-    cmd = 'nmap --open -p 5005,8080,9080,8880,7001,7002,16200 '+url
+    cmd = 'nmap --open -p 5005,8080,9080,8880,7001,16200 '+url
     print "Scanning: "+url
     try:
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
