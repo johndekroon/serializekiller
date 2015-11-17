@@ -174,7 +174,7 @@ def worker():
                 time.sleep(1)
             url = urlStripper(url)
             dispatch(url)
-        while num_threads > 1:
+        while num_threads > 0:
             time.sleep(1)
 
         print "\r\n => scan done. "+str(shellCounter)+" vulnerable hosts found."
@@ -192,6 +192,6 @@ if __name__ == '__main__':
         num_threads = 0
         threads = 35
         shellCounter = 0
-        t = threading.Thread(target=worker).start()
+        worker()
     else:
         print "ERROR: Specify a file or a url!"
