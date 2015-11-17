@@ -19,7 +19,7 @@ import base64
 
 from datetime import datetime
 
-parser = argparse.ArgumentParser(prog='serializekiller.py', formatter_class=argparse.RawDescriptionHelpFormatter, description="""SerialIceKiller.
+parser = argparse.ArgumentParser(prog='serializekiller.py', formatter_class=argparse.RawDescriptionHelpFormatter, description="""SerializeKiller.
     Usage:
     ./serializekiller.py targets.txt
 """)

@@ -20,6 +20,9 @@ No, it shouldn't do any damage, no exploit code is used. If you have doubts, kee
 
 We scanned over a 1000 servers in less than 2 minutes.
 
+##Help, we are vulnerable!
+My colleague hacker Sijmen Ruwhof made a nice write-up what to do next. You can find it [here](http://sijmen.ruwhof.net/weblog/683-scanning-an-enterprise-organisation-for-the-critical-java-deserialization-vulnerability)
+
 ##I want to contribute
 
 Please send your pull request.
