@@ -22,8 +22,11 @@ from datetime import datetime
 parser = argparse.ArgumentParser(prog='serializekiller.py', formatter_class=argparse.RawDescriptionHelpFormatter, description="""SerializeKiller.
     Usage:
     ./serializekiller.py targets.txt
+    Or:
+    ./serializekiller.py --url example.com
 """)
-parser.add_argument('file', help='File with targets')
+parser.add_argument('--url', nargs='?', help="Scan a single URL")
+parser.add_argument('file', nargs='?', help='File with targets')
 args = parser.parse_args()
 
 def nmap(url, retry = False, *args):
@@ -151,15 +154,21 @@ def dispatch(url):
         threads -= 2
         dispatch(url)
 
+def urlStripper(url):
+    url = str(url.replace("\r", ''))
+    url = str(url.replace("\n", '')) 
+    url = str(url.replace("/", ''))
+    url = str(url.replace("https://", ''))
+    url = str(url.replace("http://", ''))
+    return url
+
 def worker():
     with open(args.file) as f:
         content = f.readlines()
         for url in content:
             while((num_threads > threads)):
                 time.sleep(1)
-            url = str(url.replace("\r", ''))
-            url = str(url.replace("\n", '')) 
-            url = str(url.replace("/", ''))
+            url = urlStripper(url)
             dispatch(url)
         while(num_threads > 1):
             time.sleep(1)
@@ -173,6 +182,12 @@ if __name__ == '__main__':
     print "Start SerializeKiller..."
     print "This could take a while. Be patient.\r\n"
     num_threads = 0
-    threads = 35
-    shellCounter = 0
-    t = threading.Thread(target=worker).start()
+    if(args.url):
+        nmap(urlStripper(args.url))
+    elif(args.file):
+        num_threads = 0
+        threads = 35
+        shellCounter = 0
+        t = threading.Thread(target=worker).start()
+    else:
+        print "Specify a file or a url"
