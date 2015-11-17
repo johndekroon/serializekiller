@@ -190,4 +190,4 @@ if __name__ == '__main__':
         shellCounter = 0
         t = threading.Thread(target=worker).start()
     else:
-        print "Specify a file or a url"
+        print "ERROR: Specify a file or a url!"
