@@ -1,5 +1,5 @@
 #SerializeKiller
-After the article published about the deserilization vulnerability we needed to scan all of our servers to verify if it's vulnerable. So we wrote this script, and decided to share it. This script enables you to scan a lot of servers in a short time for the infamous Java deserialization vulnerability. It currently detects WebLogic, WebSphere and Jenkins.
+After the article published about the deserilization vulnerability we needed to scan all of our servers to verify if it's vulnerable. So we wrote this script, and decided to share it. This script enables you to scan a lot of servers in a short time for the infamous Java deserialization vulnerability. It currently detects WebLogic, WebSphere, JBOSS and Jenkins.
 
 ##What is the vulnerability?
 It is bad. The bug enables attackers to take over the the server, even without credentials. If you use Websphere, Weblogic, JBoss, Jenkins or OpenNMS you are probably vulnerable.
@@ -12,6 +12,8 @@ You need to install Python 2, Curl and NMAP first. Also Python needs the request
 or
 `./serializekiller.py --url example.com`
 
+In the scanfile you can put IP adresses and hosts. It's also possible to scan specific ports. Please see the scanfile. 
+
 **Note:** on my Mac I had to call the script with: `python2.7 serializekiller.py targets.txt`. It *might* be specific for my installation. On Linux we experienced no problems.
 
 ##Is it dangerous to use?
@@ -21,6 +23,7 @@ No, it shouldn't do any damage, no exploit code is used. If you have doubts, kee
 ##How fast is it?
 
 We scanned over a 1000 servers in less than 2 minutes.
+Edit: We noticed that in some cases it can be slower. 
 
 ##Help, we are vulnerable!
 My colleague hacker Sijmen Ruwhof made a nice write-up what to do next. You can find it [here](http://sijmen.ruwhof.net/weblog/683-scanning-an-enterprise-organisation-for-the-critical-java-deserialization-vulnerability)

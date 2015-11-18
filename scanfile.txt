@@ -2,3 +2,4 @@ foo.com
 bar.corp
 127.0.0.1
 example.com
+xyz.local:80
