@@ -54,6 +54,8 @@ def nmap(url, retry=False, *args):
         if "8080" in out:
             if jenkins(url, 8080):
                 found = True
+            elif jboss(url, 8080):
+                found = True
         if "9080" in out:
             if jenkins(url, 9080):
                 found = True
@@ -70,28 +72,27 @@ def nmap(url, retry=False, *args):
             nmap(url, True)
 
 
-def websphere(url, port, retry=False):
+def websphere(wsUrl, wsPort, retry=False):
     try:
-        cmd = 'curl -m 10 --insecure https://'+url+":"+port
+        cmd = 'curl -m 10 --insecure https://'+wsUrl+":"+wsPort
         p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         out, err = p.communicate()
         if "rO0AB" in out:
-            print " - Vulnerable Websphere: "+url+" ("+port+")"
+            print " - Vulnerable Websphere: "+wsUrl+" ("+wsPort+")"
             return True
-        
-        cmd = 'curl -m 10 http://'+url+":"+port
+        cmd = 'curl -m 10 http://'+wsUrl+":"+wsPort
         with open(os.devnull, 'w') as fp:
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         out, err = p.communicate()
         if "rO0AB" in out:
-            print " - Vulnerable Websphere: "+url+" ("+port+")"
+            print " - Vulnerable Websphere: "+wsUrl+" ("+wsPort+")"
             return True
     except:
         time.sleep(3)
         if retry:
-            print " ! Unable to verify Websphere vulnerablity for host "+url+":"+str(port)
+            print " ! Unable to verify Websphere vulnerablity for host "+wsUrl+":"+str(wsPort)
             return False
-        return websphere(url, port, True)
+        return websphere(wsUrl, wsPort, True)
 
 
 #Used this part from https://github.com/foxglovesec/JavaUnserializeExploits
@@ -145,6 +146,21 @@ def jenkins(url, port, suffix=""):
         print " - Vulnerable Jenkins: "+url+":"+str(port)+suffix
         return True
     return False
+
+def jboss(url, port, retry = False):
+    try:
+        cmd = 'curl -m 10 --insecure https://'+url+":"+port+"/invoker/JMXInvokerServlet"
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        out, err = p.communicate()
+        if "\xac\xed\x00\x05" in out:
+            print " - Vulnerable JBOSS: "+url+" ("+port+")"
+            return True
+    except:
+        time.sleep(3)
+        if retry:
+            print " ! Unable to verify JBOSS vulnerablity for host "+url+":"+str(port)
+            return False
+        return websphere(url, port, True)
 
 
 def dispatch(url):
