@@ -186,10 +186,10 @@ def jboss(url, port, retry = False):
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
-        output = urllib2.urlopen('https://'+host+':'+port+"/invoker/JMXInvokerServlet", context=ctx, timeout=8).read()
+        output = urllib2.urlopen('https://'+url+':'+port+"/invoker/JMXInvokerServlet", context=ctx, timeout=8).read()
     except:
         try:
-            output = urllib2.urlopen('http://'+host+':'+port+"/invoker/JMXInvokerServlet", timeout=8).read()
+            output = urllib2.urlopen('http://'+url+':'+port+"/invoker/JMXInvokerServlet", timeout=8).read()
         except:
             #OK. I give up.
             return False
