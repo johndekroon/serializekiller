@@ -31,7 +31,7 @@ My colleague hacker Sijmen Ruwhof made a nice write-up what to do next. You can 
 ##Pfeew! We are not vulnerable!
 Congratz! But keep in mind that this script only scans some default ports. 
 *E.g. If you have a vulnerable Jenkins server on port 80, the SerializeKiller won't find it.*
+If you want to scan non-default ports, you can specify those ports in the targets file.
 
 ##I want to contribute
-
 Please send your pull request.

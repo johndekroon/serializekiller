@@ -4,17 +4,15 @@
 # Purpose:     Finding vulnerable vulnerable servers
 #
 # Author:      (c) John de Kroon, 2015
+# Version:     1.0
 #-------------------------------------------------------------------------------
 
-import os
 import subprocess
-import json
 import threading
 import time
 import socket
 import sys
 import argparse
-import base64
 import urllib2
 import ssl
 
@@ -181,7 +179,6 @@ def jenkins(url, port):
     return False
 
 def jboss(url, port, retry = False):
-    output = ""
     try:
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
