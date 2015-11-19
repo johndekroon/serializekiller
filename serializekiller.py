@@ -4,7 +4,7 @@
 # Purpose:     Finding vulnerable vulnerable servers
 #
 # Author:      (c) John de Kroon, 2015
-# Version:     1.0
+# Version:     1.0.1
 #-------------------------------------------------------------------------------
 
 import subprocess
