@@ -76,12 +76,12 @@ def websphere(url, port, retry=False):
         ctx.verify_mode = ssl.CERT_NONE
         output = urllib2.urlopen('https://'+url+":"+port, context=ctx, timeout=8).read()
         if "rO0AB" in output:
-            print " - Vulnerable Websphere: "+url+" ("+port+")"
+            print " - (possibly) Vulnerable Websphere: "+url+" ("+port+")"
             return True
     except urllib2.HTTPError, e:
         if e.getcode() == 500:
             if "rO0AB" in e.read():
-                print " - Vulnerable Websphere: "+url+" ("+port+")"
+                print " - (possibly) Vulnerable Websphere: "+url+" ("+port+")"
                 return True
     except:
         pass
@@ -89,12 +89,12 @@ def websphere(url, port, retry=False):
     try:
         output = urllib2.urlopen('http://'+url+":"+port, timeout=3).read()
         if "rO0AB" in output:
-            print " - Vulnerable Websphere: "+url+" ("+port+")"
+            print " - (possibly) Vulnerable Websphere: "+url+" ("+port+")"
             return True
     except urllib2.HTTPError, e:
         if e.getcode() == 500:
             if "rO0AB" in e.read():
-                print " - Vulnerable Websphere: "+url+" ("+port+")"
+                print " - (possibly) Vulnerable Websphere: "+url+" ("+port+")"
                 return True
     except:
         pass
@@ -122,24 +122,27 @@ def weblogic(url, port):
     except socket_error:
         return False
 
-
 #Used something from https://github.com/foxglovesec/JavaUnserializeExploits
 def jenkins(url, port):
-    cli_port = False
-    ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
     try:
-        output = urllib2.urlopen('https://'+url+':'+port+"/jenkins/", context=ctx, timeout=8).info()
-        cli_port =  int(output['X-Jenkins-CLI-Port'])
-    except urllib2.HTTPError, e:
-        if e.getcode() == 404:
-            try:
-                output = urllib2.urlopen('https://'+url+':'+port, context=ctx, timeout=8).info()
-                cli_port =  int(output['X-Jenkins-CLI-Port'])
-            except:
-                pass
+        cli_port = False
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        try:
+            output = urllib2.urlopen('https://'+url+':'+port+"/jenkins/", context=ctx, timeout=8).info()
+            cli_port =  int(output['X-Jenkins-CLI-Port'])
+        except urllib2.HTTPError, e:
+            if e.getcode() == 404:
+                try:
+                    output = urllib2.urlopen('https://'+url+':'+port, context=ctx, timeout=8).info()
+                    cli_port =  int(output['X-Jenkins-CLI-Port'])
+                except:
+                    pass
+        except:
+            pass
     except:
+        print " ! Could not check Jenkins on https. Maybe your SSL lib is broken."
         pass
     
     if cli_port == False:
@@ -167,12 +170,12 @@ def jenkins(url, port):
 
         data1 =sock.recv(1024)
         if "rO0AB" in data1:
-            print " - Vulnerable Jenkins: "+url+":"+str(port)
+            print " - Vulnerable Jenkins: "+url+" ("+str(port)+")"
             return True
         else:
             data2 = sock.recv(1024)
             if "rO0AB" in data2:
-                print " - Vulnerable Jenkins: "+url+":"+str(port)
+                print " - Vulnerable Jenkins: "+url+" ("+str(port)+")"
                 return True
     except:
         pass
@@ -258,6 +261,12 @@ if __name__ == '__main__':
     print "Start SerializeKiller..."
     print "This could take a while. Be patient."
     print
+    
+    try:
+        ssl.create_default_context()
+    except:
+        print " ! WARNING: Your SSL lib isn't supported. Results might be incomplete."
+        pass
 
     target_list = {}
     shellCounter = 0

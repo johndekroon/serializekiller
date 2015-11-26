@@ -33,5 +33,14 @@ Congratz! But keep in mind that this script only scans some default ports.
 *E.g. If you have a vulnerable Jenkins server on port 80, the SerializeKiller won't find it.*
 If you want to scan non-default ports, you can specify those ports in the targets file.
 
+##I've patched (some) of my servers. Will SerializeKiller detect that?
+Yes. And No. We couldn't find a way to verify a patched WebSphere server (OK, we could run the exploit, but thats not desirable).
+AFAIK it will detect a patched Jenkins, Jboss and Weblogic.
+*We decided to mark vulnerable WebSphere servers as possibly vulnerable, because we can't verify the patch.*
+
 ##I want to contribute
 Please send your pull request.
+
+###Known issues
+- After specifing a port, it could take a long time to finish the scan. This is not a bug, it just takes a while.
+- Some SSL libs doesn't have the method create_default_context. As a result, it wont scan JBOSS and Jenkins proper.
