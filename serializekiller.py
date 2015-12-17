@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-------------------------------------------------------------------------------
 # Name:        SerializeKiller
-# Purpose:     Finding vulnerable vulnerable servers
+# Purpose:     Finding vulnerable java servers
 #
 # Author:      (c) John de Kroon, 2015
 # Version:     1.0.2
@@ -31,37 +31,25 @@ def nmap(host, *args):
     global threads
     global target_list
 
+    # All ports to enumerate over for jboss, jenkins, weblogic, websphere
+    port_list = ['5005', '8080', '9080', '8880', '7001', '7002', '16200', '9080', '1099', '80', '443', '81', '444', '8443', '8888', '9000', '9443']
+
     # are there any ports defined for this host?
     if not target_list[host]:
         found = False
-        cmd = 'nmap --host-timeout 5 --open -p 5005,8080,9080,8880,7001,7002,16200 '+host
+        cmd = 'nmap --host-timeout 5 --open -p %s %s' % (','.join(port_list), host)
         try:
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             out, err = p.communicate()
-            if "5005" in out:
-                if websphere(host, "5005"):
-                    found = True
-            if "8880" in out:
-                if websphere(host, "8880"):
-                    found = True
-            if "7001" in out:
-                if weblogic(host, 7001):
-                    found = True
-            if "16200" in out:
-                if weblogic(host, 16200):
-                    found = True
-            if "8080" in out:
-                if jenkins(host, "8080"):
-                    found = True
-                if jboss(host, 8080):
-                    found = True
-            if "9080" in out:
-                if jenkins(host, "9080"):
-                    found = True
+
+            for this_port in port_list:
+                if out.find (this_port) >= 0:
+                    if websphere(host, this_port) or weblogic(host, this_port) or jboss(host, this_port) or jenkins(host, this_port) :
+                        found = True
             if found:
                 shellCounter += 1
-        except ValueError:
-            print " ! Something went wrong on host: "+host
+        except ValueError, v:
+            print " ! Something went wrong on host: %s: %s" %(host, v)
             return
     else:
         for port in target_list[host]:
@@ -98,7 +86,7 @@ def websphere(url, port, retry=False):
                 return True
     except:
         pass
-    
+
 #Used this part from https://github.com/foxglovesec/JavaUnserializeExploits
 def weblogic(url, port):
     try:
@@ -144,7 +132,7 @@ def jenkins(url, port):
     except:
         print " ! Could not check Jenkins on https. Maybe your SSL lib is broken."
         pass
-    
+
     if cli_port == False:
         try:
             output = urllib2.urlopen('http://'+url+':'+port+"/jenkins/", timeout=8).info()
@@ -158,12 +146,12 @@ def jenkins(url, port):
                     return False
         except:
             return False
-    
+
     #Open a socket to the CLI port
     try:
         server_address = (url, cli_port)
         sock = socket.create_connection(server_address, 5)
-        
+
         # Send headers
         headers = '\x00\x14\x50\x72\x6f\x74\x6f\x63\x6f\x6c\x3a\x43\x4c\x49\x2d\x63\x6f\x6e\x6e\x65\x63\x74'
         sock.send(headers)
@@ -193,7 +181,7 @@ def jboss(url, port, retry = False):
         except:
             #OK. I give up.
             return False
-        
+
     if "\xac\xed\x00\x05" in output:
         print " - Vulnerable JBOSS: "+url+" ("+port+")"
         return True
@@ -203,7 +191,7 @@ def urlStripper(url):
     url = str(url.replace("https:", ''))
     url = str(url.replace("http:", ''))
     url = str(url.replace("\r", ''))
-    url = str(url.replace("\n", '')) 
+    url = str(url.replace("\n", ''))
     url = str(url.replace("/", ''))
     return url
 
@@ -216,7 +204,7 @@ def read_file(filename):
 def worker():
     global threads
     content = read_file(args.file)
-    
+
     for line in content:
         if ":" in line:
             item = line.strip().split(':')
@@ -261,7 +249,7 @@ if __name__ == '__main__':
     print "Start SerializeKiller..."
     print "This could take a while. Be patient."
     print
-    
+
     try:
         ssl.create_default_context()
     except:
