@@ -32,7 +32,7 @@ def nmap(host, *args):
     global target_list
 
     # All ports to enumerate over for jboss, jenkins, weblogic, websphere
-    port_list = ['5005', '8080', '9080', '8880', '7001', '7002', '16200', '9080', '1099', '80', '443', '81', '444', '8443', '8888', '9000', '9443']
+    port_list = ['80', '81', '443', '444', '1099', '5005', '7001', '7002', '8080', '8081', '8083', '8443', '8880', '8888', '9000', '9080', '9443', '16200']
 
     # are there any ports defined for this host?
     if not target_list[host]:
