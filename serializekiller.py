@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Name:        SerializeKiller
 # Purpose:     Finding vulnerable java servers
 #
 # Author:      (c) John de Kroon, 2015
 # Version:     1.0.2
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import subprocess
 import threading
@@ -26,15 +26,18 @@ parser.add_argument('--url', nargs='?', help="Scan a single URL")
 parser.add_argument('file', nargs='?', help='File with targets')
 args = parser.parse_args()
 
+
 def nmap(host, *args):
     global shellCounter
     global threads
     global target_list
 
     # All ports to enumerate over for jboss, jenkins, weblogic, websphere
-    port_list = ['80', '81', '443', '444', '1099', '5005', '7001', '7002', '8080', '8081', '8083', '8443', '8880', '8888', '9000', '9080', '9443', '16200']
+    port_list = ['80', '81', '443', '444', '1099', '5005',
+                 '7001', '7002', '8080', '8081', '8083', '8443',
+                 '8880', '8888', '9000', '9080', '9443', '16200']
 
-    # are there any ports defined for this host?
+    # Are there any ports defined for this host?
     if not target_list[host]:
         found = False
         cmd = 'nmap --host-timeout 5 --open -p %s %s' % (','.join(port_list), host)
@@ -43,19 +46,20 @@ def nmap(host, *args):
             out, err = p.communicate()
 
             for this_port in port_list:
-                if out.find (this_port) >= 0:
-                    if websphere(host, this_port) or weblogic(host, this_port) or jboss(host, this_port) or jenkins(host, this_port) :
+                if out.find(this_port) >= 0:
+                    if websphere(host, this_port) or weblogic(host, this_port) or jboss(host, this_port) or jenkins(host, this_port):
                         found = True
             if found:
                 shellCounter += 1
         except ValueError, v:
-            print " ! Something went wrong on host: %s: %s" %(host, v)
+            print " ! Something went wrong on host: %s: %s" % (host, v)
             return
     else:
         for port in target_list[host]:
             if websphere(host, port) or weblogic(host, port) or jenkins(host, port) or jboss(host, port):
                 shellCounter += 1
         return
+
 
 def websphere(url, port, retry=False):
     try:
@@ -87,7 +91,8 @@ def websphere(url, port, retry=False):
     except:
         pass
 
-#Used this part from https://github.com/foxglovesec/JavaUnserializeExploits
+
+# Used this part from https://github.com/foxglovesec/JavaUnserializeExploits
 def weblogic(url, port):
     try:
         server_address = (url, int(port))
@@ -110,7 +115,8 @@ def weblogic(url, port):
     except socket_error:
         return False
 
-#Used something from https://github.com/foxglovesec/JavaUnserializeExploits
+
+# Used something from https://github.com/foxglovesec/JavaUnserializeExploits
 def jenkins(url, port):
     try:
         cli_port = False
@@ -119,12 +125,12 @@ def jenkins(url, port):
         ctx.verify_mode = ssl.CERT_NONE
         try:
             output = urllib2.urlopen('https://'+url+':'+port+"/jenkins/", context=ctx, timeout=8).info()
-            cli_port =  int(output['X-Jenkins-CLI-Port'])
+            cli_port = int(output['X-Jenkins-CLI-Port'])
         except urllib2.HTTPError, e:
             if e.getcode() == 404:
                 try:
                     output = urllib2.urlopen('https://'+url+':'+port, context=ctx, timeout=8).info()
-                    cli_port =  int(output['X-Jenkins-CLI-Port'])
+                    cli_port = int(output['X-Jenkins-CLI-Port'])
                 except:
                     pass
         except:
@@ -133,21 +139,21 @@ def jenkins(url, port):
         print " ! Could not check Jenkins on https. Maybe your SSL lib is broken."
         pass
 
-    if cli_port == False:
+    if cli_port is not True:
         try:
             output = urllib2.urlopen('http://'+url+':'+port+"/jenkins/", timeout=8).info()
-            cli_port =  int(output['X-Jenkins-CLI-Port'])
+            cli_port = int(output['X-Jenkins-CLI-Port'])
         except urllib2.HTTPError, e:
             if e.getcode() == 404:
                 try:
                     output = urllib2.urlopen('http://'+url+':'+port, timeout=8).info()
-                    cli_port =  int(output['X-Jenkins-CLI-Port'])
+                    cli_port = int(output['X-Jenkins-CLI-Port'])
                 except:
                     return False
         except:
             return False
 
-    #Open a socket to the CLI port
+    # Open a socket to the CLI port
     try:
         server_address = (url, cli_port)
         sock = socket.create_connection(server_address, 5)
@@ -156,7 +162,7 @@ def jenkins(url, port):
         headers = '\x00\x14\x50\x72\x6f\x74\x6f\x63\x6f\x6c\x3a\x43\x4c\x49\x2d\x63\x6f\x6e\x6e\x65\x63\x74'
         sock.send(headers)
 
-        data1 =sock.recv(1024)
+        data1 = sock.recv(1024)
         if "rO0AB" in data1:
             print " - Vulnerable Jenkins: "+url+" ("+str(port)+")"
             return True
@@ -169,7 +175,8 @@ def jenkins(url, port):
         pass
     return False
 
-def jboss(url, port, retry = False):
+
+def jboss(url, port, retry=False):
     try:
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
@@ -179,13 +186,14 @@ def jboss(url, port, retry = False):
         try:
             output = urllib2.urlopen('http://'+url+':'+port+"/invoker/JMXInvokerServlet", timeout=8).read()
         except:
-            #OK. I give up.
+            # OK. I give up.
             return False
 
     if "\xac\xed\x00\x05" in output:
         print " - Vulnerable JBOSS: "+url+" ("+port+")"
         return True
     return False
+
 
 def urlStripper(url):
     url = str(url.replace("https:", ''))
@@ -195,11 +203,13 @@ def urlStripper(url):
     url = str(url.replace("/", ''))
     return url
 
+
 def read_file(filename):
     f = open(filename)
     content = f.readlines()
     f.close()
     return content
+
 
 def worker():
     global threads
@@ -223,17 +233,16 @@ def worker():
     for host in target_list:
         current += 1
         while threading.active_count() > threads:
-            print " ! We have more threads running than allowed. Current: {} Max: {}.".format(threading.active_count(),
-                                                                                           threads)
+            print " ! We have more threads running than allowed. Current: {} Max: {}.".format(threading.active_count(), threads)
             if threads < 100:
-                threads+=1
+                threads += 1
             sys.stdout.flush()
             time.sleep(2)
         print " # Starting test {} of {} on {}.".format(current, total_jobs, host)
         sys.stdout.flush()
         threading.Thread(target=nmap, args=(host, False, 1)).start()
 
-    #we're done!
+    # We're done!
     while threading.active_count() > 2:
         print " # Waiting for everybody to come back. Still {} active.".format(threading.active_count() - 1)
         sys.stdout.flush()
