@@ -18,6 +18,8 @@ import ssl
 
 from socket import error as socket_error
 from datetime import datetime
+import thread, time
+mutex = thread.allocate_lock()
 
 parser = argparse.ArgumentParser(prog='serializekiller.py',
                                  formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -34,7 +36,7 @@ def nmap(host, *args):
     # are there any ports defined for this host?
     if not target_list[host]:
         found = False
-        cmd = 'nmap --host-timeout 5 --open -p 5005,8080,9080,8880,7001,7002,16200 '+host
+        cmd = 'nmap --host-timeout 5 --open -p 5005,8080,9080,8880,8887,7001,7002,16200 '+host
         try:
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
             out, err = p.communicate()
@@ -43,6 +45,9 @@ def nmap(host, *args):
                     found = True
             if "8880" in out:
                 if websphere(host, "8880"):
+                    found = True
+            if "8887" in out:
+                if websphere(host, "8887"):
                     found = True
             if "7001" in out:
                 if weblogic(host, 7001):
@@ -76,12 +81,16 @@ def websphere(url, port, retry=False):
         ctx.verify_mode = ssl.CERT_NONE
         output = urllib2.urlopen('https://'+url+":"+port, context=ctx, timeout=8).read()
         if "rO0AB" in output:
+            mutex.acquire()
             print " - (possibly) Vulnerable Websphere: "+url+" ("+port+")"
+            mutex.release()
             return True
     except urllib2.HTTPError, e:
         if e.getcode() == 500:
             if "rO0AB" in e.read():
+                mutex.acquire()
                 print " - (possibly) Vulnerable Websphere: "+url+" ("+port+")"
+                mutex.release()
                 return True
     except:
         pass
@@ -89,12 +98,16 @@ def websphere(url, port, retry=False):
     try:
         output = urllib2.urlopen('http://'+url+":"+port, timeout=3).read()
         if "rO0AB" in output:
+            mutex.acquire()
             print " - (possibly) Vulnerable Websphere: "+url+" ("+port+")"
+            mutex.release()
             return True
     except urllib2.HTTPError, e:
         if e.getcode() == 500:
             if "rO0AB" in e.read():
+                mutex.acquire()
                 print " - (possibly) Vulnerable Websphere: "+url+" ("+port+")"
+                mutex.release()
                 return True
     except:
         pass
@@ -116,7 +129,9 @@ def weblogic(url, port):
 
         sock.close()
         if "HELO" in data:
+            mutex.acquire()
             print " - Vulnerable Weblogic: "+url+" ("+str(port)+")"
+            mutex.release()
             return True
         return False
     except socket_error:
@@ -142,7 +157,9 @@ def jenkins(url, port):
         except:
             pass
     except:
+        mutex.acquire()
         print " ! Could not check Jenkins on https. Maybe your SSL lib is broken."
+        mutex.release()
         pass
     
     if cli_port == False:
@@ -170,12 +187,16 @@ def jenkins(url, port):
 
         data1 =sock.recv(1024)
         if "rO0AB" in data1:
+            mutex.acquire()
             print " - Vulnerable Jenkins: "+url+" ("+str(port)+")"
+            mutex.release()
             return True
         else:
             data2 = sock.recv(1024)
             if "rO0AB" in data2:
+                mutex.acquire()
                 print " - Vulnerable Jenkins: "+url+" ("+str(port)+")"
+                mutex.release()
                 return True
     except:
         pass
@@ -195,7 +216,9 @@ def jboss(url, port, retry = False):
             return False
         
     if "\xac\xed\x00\x05" in output:
+        mutex.acquire()
         print " - Vulnerable JBOSS: "+url+" ("+port+")"
+        mutex.release()
         return True
     return False
 
@@ -235,33 +258,43 @@ def worker():
     for host in target_list:
         current += 1
         while threading.active_count() > threads:
+            mutex.acquire()
             print " ! We have more threads running than allowed. Current: {} Max: {}.".format(threading.active_count(),
                                                                                            threads)
+            mutex.release()
             if threads < 100:
                 threads+=1
             sys.stdout.flush()
             time.sleep(2)
+        mutex.acquire()
         print " # Starting test {} of {} on {}.".format(current, total_jobs, host)
         sys.stdout.flush()
+        mutex.release()
         threading.Thread(target=nmap, args=(host, False, 1)).start()
 
     #we're done!
     while threading.active_count() > 2:
+        mutex.acquire()
         print " # Waiting for everybody to come back. Still {} active.".format(threading.active_count() - 1)
         sys.stdout.flush()
+        mutex.release()
         time.sleep(4)
 
+    mutex.acquire()
     print
     print " => scan done. "+str(shellCounter)+" vulnerable hosts found."
     print "Execution time: "+str(datetime.now() - startTime)
+    mutex.release()
     exit()
 
 if __name__ == '__main__':
     startTime = datetime.now()
+    mutex.acquire()
     print "Start SerializeKiller..."
     print "This could take a while. Be patient."
     print
-    
+    mutex.release()
+
     try:
         ssl.create_default_context()
     except:
@@ -277,4 +310,6 @@ if __name__ == '__main__':
         threads = 30
         worker()
     else:
+        mutex.acquire()
         print "ERROR: Specify a file or a url!"
+        mutex.release()
