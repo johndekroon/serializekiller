@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-#-------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Name:        SerializeKiller
-# Purpose:     Finding vulnerable vulnerable servers
+# Purpose:     Finding vulnerable java servers
 #
 # Author:      (c) John de Kroon, 2015
 # Version:     1.0.2
-#-------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 import subprocess
 import threading
@@ -36,16 +36,20 @@ def saveToFile(result):
         f.write(result)
         f.close()
 
-
 def nmap(host, *args):
     global shellCounter
     global threads
     global target_list
 
-    # are there any ports defined for this host?
+    # All ports to enumerate over for jboss, jenkins, weblogic, websphere
+    port_list = ['80', '81', '443', '444', '1099', '5005',
+                 '7001', '7002', '8080', '8081', '8083', '8443',
+                 '8880', '8888', '9000', '9080', '9443', '16200']
+
+    # Are there any ports defined for this host?
     if not target_list[host]:
         found = False
-        cmd = 'nmap --host-timeout 5 --open -p 5005,8080,9080,8880,8887,7001,7002,16200 ' + host
+        cmd = 'nmap --host-timeout 5 --open -p %s %s' % (','.join(port_list), host)
         try:
             p = subprocess.Popen(
                 cmd,
@@ -53,34 +57,15 @@ def nmap(host, *args):
                 stderr=subprocess.PIPE,
                 shell=True)
             out, err = p.communicate()
-            if "5005" in out:
-                if websphere(host, "5005"):
-                    found = True
-            if "8880" in out:
-                if websphere(host, "8880"):
-                    found = True
-            if "8887" in out:
-                if websphere(host, "8887"):
-                    found = True
-            if "7001" in out:
-                if weblogic(host, 7001):
-                    found = True
-            if "16200" in out:
-                if weblogic(host, 16200):
-                    found = True
-            if "8080" in out:
-                if jenkins(host, "8080"):
-                    found = True
-                if jboss(host, 8080):
-                    found = True
-            if "9080" in out:
-                if jenkins(host, "9080"):
-                    found = True
+
+            for this_port in port_list:
+                if out.find(this_port) >= 0:
+                    if websphere(host, this_port) or weblogic(host, this_port) or jboss(host, this_port) or jenkins(host, this_port):
+                        found = True
             if found:
                 shellCounter += 1
-        except ValueError:
-            print " ! Something went wrong on host: " + host
-            saveToFile('[-] Error with host: ' + host + '\n')
+        except ValueError, v:
+            print " ! Something went wrong on host: %s: %s" % (host, v)
             return
     else:
         for port in target_list[host]:
@@ -145,8 +130,6 @@ def websphere(url, port, retry=False):
         pass
 
 # Used this part from https://github.com/foxglovesec/JavaUnserializeExploits
-
-
 def weblogic(url, port):
     try:
         server_address = (url, int(port))
@@ -172,9 +155,8 @@ def weblogic(url, port):
     except socket_error:
         return False
 
+
 # Used something from https://github.com/foxglovesec/JavaUnserializeExploits
-
-
 def jenkins(url, port):
     try:
         cli_port = False
@@ -182,20 +164,12 @@ def jenkins(url, port):
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
         try:
-            output = urllib2.urlopen(
-                'https://' +
-                url +
-                ':' +
-                port +
-                "/jenkins/",
-                context=ctx,
-                timeout=8).info()
+            output = urllib2.urlopen('https://'+url+':'+port+"/jenkins/", context=ctx, timeout=8).info()
             cli_port = int(output['X-Jenkins-CLI-Port'])
-        except urllib2.HTTPError as e:
+        except urllib2.HTTPError, e:
             if e.getcode() == 404:
                 try:
-                    output = urllib2.urlopen(
-                        'https://' + url + ':' + port, context=ctx, timeout=8).info()
+                    output = urllib2.urlopen('https://'+url+':'+port, context=ctx, timeout=8).info()
                     cli_port = int(output['X-Jenkins-CLI-Port'])
                 except:
                     pass
@@ -207,17 +181,14 @@ def jenkins(url, port):
         mutex.release()
         pass
 
-    if not cli_port:
+    if cli_port is not True:
         try:
-            output = urllib2.urlopen(
-                'http://' + url + ':' + port + "/jenkins/",
-                timeout=8).info()
+            output = urllib2.urlopen('http://'+url+':'+port+"/jenkins/", timeout=8).info()
             cli_port = int(output['X-Jenkins-CLI-Port'])
-        except urllib2.HTTPError as e:
+        except urllib2.HTTPError, e:
             if e.getcode() == 404:
                 try:
-                    output = urllib2.urlopen(
-                        'http://' + url + ':' + port, timeout=8).info()
+                    output = urllib2.urlopen('http://'+url+':'+port, timeout=8).info()
                     cli_port = int(output['X-Jenkins-CLI-Port'])
                 except:
                     return False
@@ -327,8 +298,7 @@ def worker():
         current += 1
         while threading.active_count() > threads:
             mutex.acquire()
-            print " ! We have more threads running than allowed. Current: {} Max: {}.".format(threading.active_count(),
-                                                                                              threads)
+            print " ! We have more threads running than allowed. Current: {} Max: {}.".format(threading.active_count(), threads)
             mutex.release()
             if threads < 100:
                 threads += 1
@@ -340,7 +310,7 @@ def worker():
         mutex.release()
         threading.Thread(target=nmap, args=(host, False, 1)).start()
 
-    # we're done!
+    # We're done!
     while threading.active_count() > 2:
         mutex.acquire()
         print " # Waiting for everybody to come back. Still {} active.".format(threading.active_count() - 1)
