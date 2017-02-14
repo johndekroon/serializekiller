@@ -80,7 +80,7 @@ def nmap(host, *args):
                 shellCounter += 1
         except ValueError:
             print " ! Something went wrong on host: " + host
-            saveToFile('[-] Error with host: '+host+'\n')
+            saveToFile('[-] Error with host: ' + host + '\n')
             return
     else:
         for port in target_list[host]:
@@ -109,7 +109,7 @@ def websphere(url, port, retry=False):
         if "rO0AB" in output:
             mutex.acquire()
             print " - (possibly) Vulnerable Websphere: " + url + " (" + port + ")"
-            saveToFile('[+] Websphere: '+url+':'+port+'\n')
+            saveToFile('[+] Websphere: ' + url + ':' + port + '\n')
             mutex.release()
             return True
     except urllib2.HTTPError as e:
@@ -117,7 +117,7 @@ def websphere(url, port, retry=False):
             if "rO0AB" in e.read():
                 mutex.acquire()
                 print " - (possibly) Vulnerable Websphere: " + url + " (" + port + ")"
-                saveToFile('[+] Websphere: '+url+':'+port+'\n')
+                saveToFile('[+] Websphere: ' + url + ':' + port + '\n')
                 mutex.release()
                 return True
     except:
@@ -130,7 +130,7 @@ def websphere(url, port, retry=False):
         if "rO0AB" in output:
             mutex.acquire()
             print " - (possibly) Vulnerable Websphere: " + url + " (" + port + ")"
-            saveToFile('[+] Websphere: '+url+':'+port+'\n')
+            saveToFile('[+] Websphere: ' + url + ':' + port + '\n')
             mutex.release()
             return True
     except urllib2.HTTPError as e:
@@ -138,7 +138,7 @@ def websphere(url, port, retry=False):
             if "rO0AB" in e.read():
                 mutex.acquire()
                 print " - (possibly) Vulnerable Websphere: " + url + " (" + port + ")"
-                saveToFile('[+] Websphere: '+url+':'+port+'\n')
+                saveToFile('[+] Websphere: ' + url + ':' + port + '\n')
                 mutex.release()
                 return True
     except:
@@ -165,7 +165,7 @@ def weblogic(url, port):
         if "HELO" in data:
             mutex.acquire()
             print " - Vulnerable Weblogic: " + url + " (" + str(port) + ")"
-            saveToFile('[+] Weblogic: '+url+':'+str(port)+'\n')
+            saveToFile('[+] Weblogic: ' + url + ':' + str(port) + '\n')
             mutex.release()
             return True
         return False
@@ -237,7 +237,7 @@ def jenkins(url, port):
         if "rO0AB" in data1:
             mutex.acquire()
             print " - Vulnerable Jenkins: " + url + " (" + str(port) + ")"
-            saveToFile('[+] Weblogic: '+url+':'+str(port)+'\n')
+            saveToFile('[+] Weblogic: ' + url + ':' + str(port) + '\n')
             mutex.release()
             return True
         else:
@@ -245,7 +245,7 @@ def jenkins(url, port):
             if "rO0AB" in data2:
                 mutex.acquire()
                 print " - Vulnerable Jenkins: " + url + " (" + str(port) + ")"
-                saveToFile('[+] Jenkins: '+':'+str(port)+'\n')
+                saveToFile('[+] Jenkins: ' + ':' + str(port) + '\n')
                 mutex.release()
                 return True
     except:
@@ -282,7 +282,7 @@ def jboss(url, port, retry=False):
     if "\xac\xed\x00\x05" in output:
         mutex.acquire()
         print " - Vulnerable JBOSS: " + url + " (" + port + ")"
-        saveToFile('[+] JBoss: '+':'+port+'\n')
+        saveToFile('[+] JBoss: ' + ':' + port + '\n')
         mutex.release()
         return True
     return False
