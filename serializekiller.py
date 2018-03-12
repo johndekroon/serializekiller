@@ -147,7 +147,7 @@ def weblogic(url, port):
         sock.close()
         if "HELO" in data:
             mutex.acquire()
-            print " - Vulnerable Weblogic: " + url + " (" + str(port) + ")"
+            print " - (possibly) Vulnerable Weblogic: " + url + " (" + str(port) + ")"
             saveToFile('[+] Weblogic: ' + url + ':' + str(port) + '\n')
             mutex.release()
             return True
@@ -207,7 +207,7 @@ def jenkins(url, port):
         data1 = sock.recv(1024)
         if "rO0AB" in data1:
             mutex.acquire()
-            print " - Vulnerable Jenkins: " + url + " (" + str(port) + ")"
+            print " - (possibly) Vulnerable Jenkins: " + url + " (" + str(port) + ")"
             saveToFile('[+] Weblogic: ' + url + ':' + str(port) + '\n')
             mutex.release()
             return True
@@ -215,7 +215,7 @@ def jenkins(url, port):
             data2 = sock.recv(1024)
             if "rO0AB" in data2:
                 mutex.acquire()
-                print " - Vulnerable Jenkins: " + url + " (" + str(port) + ")"
+                print " - (possibly) Vulnerable Jenkins: " + url + " (" + str(port) + ")"
                 saveToFile('[+] Jenkins: ' + ':' + str(port) + '\n')
                 mutex.release()
                 return True
@@ -252,7 +252,7 @@ def jboss(url, port, retry=False):
 
     if "\xac\xed\x00\x05" in output:
         mutex.acquire()
-        print " - Vulnerable JBOSS: " + url + " (" + port + ")"
+        print " - (possibly) Vulnerable JBOSS: " + url + " (" + port + ")"
         saveToFile('[+] JBoss: ' + ':' + port + '\n')
         mutex.release()
         return True
