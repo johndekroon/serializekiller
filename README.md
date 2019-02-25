@@ -1,5 +1,5 @@
 # SerializeKiller
-After the article published about the deserilization vulnerability we needed to scan all of our servers to verify if it's vulnerable. So we wrote this script, and decided to share it. This script enables you to scan a lot of servers in a short time for the famous Java deserialization vulnerability. It currently detects WebLogic, WebSphere, JBOSS and Jenkins.
+After the article published about the deserialization vulnerability we needed to scan all of our servers to verify if it's vulnerable. So we wrote this script, and decided to share it. This script enables you to scan a lot of servers in a short time for the famous Java deserialization vulnerability. It currently detects WebLogic, WebSphere, JBOSS and Jenkins.
 
 Edit: changed "infamous" to "famous" since this script made it somehow to Mr. Robot S03E07. 
 
